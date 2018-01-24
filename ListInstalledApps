@@ -1,0 +1,25 @@
+# D Radley
+# 22nd Jan 2018
+# Pull installed application information from each MS Windows VM listed in vCenter - except VDI instances
+# NOTE: Needs to be run using 'SER' account
+
+Connect-VIServer vcentername/IP
+
+Get-VM | Where-Object {$_.PowerState -eq "PoweredOn" -and $_.GuestId -match "windows" -and $_.Name -notmatch "VDI"} | Select Name | Sort-Object Name | Export-Csv C:\Temp\VMs.csv -NoTypeInformation
+
+$VMs = Get-Content C:\Temp\VMs.csv | Select -Skip 1
+
+ForEach ($VM in $VMs)
+    {
+GWMI -Class Win32_Product -ComputerName $VM | Select Name,Version,Vendor | Sort-Object Name | Export-CSV C:\Temp\SoftwareInventory\$VM.csv -NoTypeInformation
+    }
+Disconnect-VIServer -Confirm:$false
+Clear-Host
+Write-Host " "
+Write-Host " "
+Write-Host " "
+Write-Host "Check C:\Temp\SoftwareInventory\ for the results" -ForegroundColor Red -BackgroundColor White
+Write-Host " "
+Write-Host " "
+Write-Host " "
+Pause
