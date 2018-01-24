@@ -1,0 +1,28 @@
+#Enable SSH on an ESXi Host
+
+#Load PowerCLI Snapin if it's not loaded
+#if ((Get-PSSnapin | Where-Object {$_.Name -eq "VMware.VimAutomation.Core"}) -eq $null) {
+#    Add-PSSnapin VMware.VimAutomation.Core
+#    }
+
+# What host?
+$ESXHost = Read-Host "Enter ESXi Host DNS Name or IP:"
+$Root = Read-Host "Enter ESXi Host ROOT Password:" -AsSecureString
+
+# Enable SSH
+$RootPwd = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($Root))
+Connect-VIServer $ESXHost -User root -Password $RootPwd -ErrorAction Stop
+Get-VMHostService | Where {$_.Key -eq 'TSM-SSH'} | Start-VMHostService
+Clear-Host
+Write-Host "Starting TSM-SSH..." -BackgroundColor White -ForegroundColor Red
+
+#Launch Putty and connect
+Write-Host "Connecting to Host..." -BackgroundColor White -ForegroundColor Red
+H:\Data\putty\PUTTY.EXE root@$ESXHost -pw $RootPwd
+Remove-Variable RootPwd
+Start-Sleep 10
+
+#Stop the SSH service
+Write-Host "Stopping TSM-SSH..." -BackgroundColor White -ForegroundColor Red
+Get-VMHostService | Where {$_.Key -eq 'TSM-SSH'} | Stop-VMHostService -Confirm:$false | Out-Null
+Disconnect-VIServer * -Confirm:$false
